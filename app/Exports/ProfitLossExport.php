@@ -2,103 +2,287 @@
 
 namespace App\Exports;
 
-// Import model Transaction
 use App\Models\Transaction;
 
-// Collection digunakan untuk menampung data sementara
-use Illuminate\Support\Collection;
-
-// Interface FromCollection dari Laravel Excel
-// Menandakan bahwa export akan mengambil data dari collection()
+/*
+    Interface untuk export data collection
+    ke Excel
+*/
 use Maatwebsite\Excel\Concerns\FromCollection;
 
-class ProfitLossExport implements FromCollection
+/*
+    Interface untuk membuat heading
+    pada file Excel
+*/
+use Maatwebsite\Excel\Concerns\WithHeadings;
+
+class ProfitLossExport implements FromCollection, WithHeadings
 {
-    /**
-     * Method ini WAJIB ada karena class menggunakan FromCollection
-     * Semua data yang direturn di sini akan dijadikan isi file Excel
-     */
+    // =====================================================
+    // MENGAMBIL DATA UNTUK EXPORT EXCEL
+    // =====================================================
     public function collection()
     {
-        /**
-         * Ambil semua transaksi beserta relasinya
-         * - coa           => relasi chart of account
-         * - coa.category  => relasi category dari coa
-         * 
-         * with() dipakai agar tidak terjadi N+1 Query
-         * Jadi relasi langsung di-load sekali
-         */
+        /*
+            Mengambil semua transaksi
+            beserta relasi:
+            - coa
+            - category dari coa
+        */
         $transactions = Transaction::with([
+
             'coa',
+
             'coa.category'
+
         ])->get();
 
-        /**
-         * Buat collection kosong untuk menampung
-         * hasil akhir data export
-         */
+        /*
+            Membuat collection kosong
+            untuk menampung row excel
+        */
         $rows = collect();
 
-        /**
-         * LOOP SEMUA TRANSAKSI YANG MEMILIKI CREDIT > 0
-         * 
-         * Dianggap sebagai Income / pemasukan
-         */
-        foreach ($transactions->where('credit', '>', 0) as $item) {
+        /*
+            Variabel total income
+        */
+        $totalIncome = 0;
 
-            /**
-             * Tambahkan data ke collection $rows
-             * push() = menambahkan item baru ke collection
-             */
+        /*
+            Variabel total expense
+        */
+        $totalExpense = 0;
+
+        // =================================================
+        // LOOP DATA INCOME
+        // =================================================
+
+        /*
+            Mengambil transaksi
+            yang memiliki credit > 0
+        */
+        foreach (
+            $transactions->where('credit', '>', 0)
+            as $item
+        ) {
+
+            /*
+                Menambahkan total income
+            */
+            $totalIncome += $item->credit;
+
+            /*
+                Menambahkan row
+                ke collection
+            */
             $rows->push([
 
-                // Kolom Type
-                'Type' => 'Income',
+                /*
+                    Tanggal transaksi
+                */
+                'date' => $item->created_at
+                    ->format('Y-m-d'),
 
-                // Nama COA
-                // ?? '-' dipakai kalau data null
-                'COA' => $item->coa->name ?? '-',
+                /*
+                    Jenis transaksi
+                */
+                'type' => 'Income',
 
-                // Nama category dari COA
-                'Category' => $item->coa->category->name ?? '-',
+                /*
+                    Nama COA
+                */
+                'coa' => $item->coa->name ?? '-',
 
-                // Nilai credit dimasukkan sebagai amount
-                'Amount' => $item->credit
+                /*
+                    Nama category
+                */
+                'category' =>
+                    $item->coa->category->name ?? '-',
+
+                /*
+                    Deskripsi transaksi
+                */
+                'description' =>
+                    $item->description ?? '-',
+
+                /*
+                    Jumlah income
+                */
+                'amount' => $item->credit,
             ]);
         }
 
-        /**
-         * LOOP SEMUA TRANSAKSI YANG MEMILIKI DEBIT > 0
-         * 
-         * Dianggap sebagai Expense / pengeluaran
-         */
-        foreach ($transactions->where('debit', '>', 0) as $item) {
+        // =================================================
+        // LOOP DATA EXPENSE
+        // =================================================
 
-            /**
-             * Tambahkan data expense ke collection
-             */
+        /*
+            Mengambil transaksi
+            yang memiliki debit > 0
+        */
+        foreach (
+            $transactions->where('debit', '>', 0)
+            as $item
+        ) {
+
+            /*
+                Menambahkan total expense
+            */
+            $totalExpense += $item->debit;
+
+            /*
+                Menambahkan row
+                ke collection
+            */
             $rows->push([
 
-                // Kolom Type
-                'Type' => 'Expense',
+                /*
+                    Tanggal transaksi
+                */
+                'date' => $item->created_at
+                    ->format('Y-m-d'),
 
-                // Nama COA
-                'COA' => $item->coa->name ?? '-',
+                /*
+                    Jenis transaksi
+                */
+                'type' => 'Expense',
 
-                // Nama category
-                'Category' => $item->coa->category->name ?? '-',
+                /*
+                    Nama COA
+                */
+                'coa' => $item->coa->name ?? '-',
 
-                // Nilai debit dijadikan amount
-                'Amount' => $item->debit
+                /*
+                    Nama category
+                */
+                'category' =>
+                    $item->coa->category->name ?? '-',
+
+                /*
+                    Deskripsi transaksi
+                */
+                'description' =>
+                    $item->description ?? '-',
+
+                /*
+                    Jumlah expense
+                */
+                'amount' => $item->debit,
             ]);
         }
 
-        /**
-         * Return collection akhir
-         * 
-         * Data inilah yang nanti diproses oleh
-         * Laravel Excel menjadi file .xlsx
-         */
+        // =================================================
+        // BARIS KOSONG PEMBATAS
+        // =================================================
+
+        $rows->push([]);
+
+        // =================================================
+        // TOTAL INCOME
+        // =================================================
+
+        $rows->push([
+
+            'date' => '',
+
+            'type' => '',
+
+            'coa' => '',
+
+            'category' => '',
+
+            /*
+                Label total income
+            */
+            'description' => 'Total Income',
+
+            /*
+                Nilai total income
+            */
+            'amount' => $totalIncome,
+        ]);
+
+        // =================================================
+        // TOTAL EXPENSE
+        // =================================================
+
+        $rows->push([
+
+            'date' => '',
+
+            'type' => '',
+
+            'coa' => '',
+
+            'category' => '',
+
+            /*
+                Label total expense
+            */
+            'description' => 'Total Expense',
+
+            /*
+                Nilai total expense
+            */
+            'amount' => $totalExpense,
+        ]);
+
+        // =================================================
+        // NET PROFIT
+        // =================================================
+
+        $rows->push([
+
+            'date' => '',
+
+            'type' => '',
+
+            'coa' => '',
+
+            'category' => '',
+
+            /*
+                Label net profit
+            */
+            'description' => 'Net Profit',
+
+            /*
+                Profit bersih
+                = income - expense
+            */
+            'amount' =>
+                $totalIncome - $totalExpense,
+        ]);
+
+        /*
+            Return semua row
+            untuk dijadikan file Excel
+        */
         return $rows;
+    }
+
+    // =====================================================
+    // HEADER KOLOM EXCEL
+    // =====================================================
+    public function headings(): array
+    {
+        /*
+            Nama header
+            pada file Excel
+        */
+        return [
+
+            'Date',
+
+            'Type',
+
+            'COA',
+
+            'Category',
+
+            'Description',
+
+            'Amount',
+        ];
     }
 }
