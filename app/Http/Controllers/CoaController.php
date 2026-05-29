@@ -2,37 +2,26 @@
 
 namespace App\Http\Controllers;
 
-// Import model COA
 use App\Models\Coa;
-
-// Import model Category
 use App\Models\Category;
-
-// Import Request untuk mengambil input user
 use Illuminate\Http\Request;
 
 class CoaController extends Controller
 {
     /**
-     * Menampilkan semua data COA
+     * Menampilkan semua data COA beserta category
+     * dalam format JSON
      */
     public function index()
     {
         /**
-         * Ambil semua data COA beserta relasi category
-         * 
          * with('category')
-         * digunakan agar category langsung ikut diambil
-         * (eager loading)
-         * 
-         * latest()
-         * urut berdasarkan created_at terbaru
+         * digunakan untuk mengambil relasi category
+         * agar tidak query berulang (eager loading)
          */
         $coas = Coa::with('category')->latest()->get();
 
-        /**
-         * Return data dalam bentuk JSON
-         */
+        // Return data JSON
         return response()->json($coas);
     }
 
@@ -41,130 +30,149 @@ class CoaController extends Controller
      */
     public function store(Request $request)
     {
-        /**
-         * Insert data baru ke tabel coas
-         */
+        // Membuat data COA baru
         Coa::create([
 
-            // Kode akun
+            // kode akun
             'code' => $request->code,
 
-            // Nama akun
+            // nama akun
             'name' => $request->name,
 
-            // Foreign key category
+            // foreign key category
             'category_id' => $request->category_id
         ]);
 
-        /**
-         * Redirect kembali ke halaman COA
-         * dengan pesan sukses
-         */
+        // Redirect ke halaman COA
+        // dengan pesan berhasil
         return redirect('/coas')
             ->with('success', 'COA created');
     }
 
     /**
-     * Menampilkan detail COA berdasarkan id
+     * Menampilkan detail 1 COA berdasarkan id
      */
     public function show($id)
     {
         /**
-         * Cari COA berdasarkan id
-         * beserta relasi category
-         * 
-         * findOrFail():
-         * - jika data ada => return data
-         * - jika tidak ada => otomatis error 404
+         * Ambil data COA + relasi category
+         * findOrFail() -> jika tidak ada, error 404
          */
         $coa = Coa::with('category')->findOrFail($id);
 
-        /**
-         * Return data COA dalam bentuk JSON
-         */
+        // Return data JSON
         return response()->json($coa);
     }
 
     /**
-     * Update data COA
+     * Mengupdate data COA
      */
     public function update(Request $request, $id)
     {
-        /**
-         * Cari data COA berdasarkan id
-         */
+        // Cari data COA berdasarkan id
         $coa = Coa::findOrFail($id);
 
-        /**
-         * Update data COA
-         */
+        // Update data
         $coa->update([
-
-            // Update kode akun
             'code' => $request->code,
-
-            // Update nama akun
             'name' => $request->name,
-
-            // Update category
             'category_id' => $request->category_id
         ]);
 
-        /**
-         * Redirect kembali ke halaman COA
-         * dengan flash message sukses
-         */
+        // Redirect kembali ke halaman COA
         return redirect('/coas')
             ->with('success', 'COA updated');
     }
 
     /**
-     * Hapus data COA
+     * Menghapus data COA
      */
     public function destroy($id)
     {
-        /**
-         * Cari COA berdasarkan id
-         */
+        // Cari data COA
         $coa = Coa::findOrFail($id);
 
-        /**
-         * Hapus data dari database
-         */
+        // Hapus data
         $coa->delete();
 
-        /**
-         * Redirect kembali dengan pesan sukses
-         */
+        // Redirect kembali dengan pesan sukses
         return redirect('/coas')
             ->with('success', 'COA deleted');
     }
 
     /**
      * Menampilkan halaman view COA
+     * beserta fitur search & filter category
      */
-    public function view()
+    public function view(Request $request)
     {
         /**
-         * Ambil semua data COA
-         * beserta relasi category
+         * Query awal
+         * with('category') agar relasi category ikut diambil
          */
-        $coas = Coa::with('category')
-            ->latest()
-            ->get();
+        $query = Coa::with('category');
+
+        /**
+         * SEARCH
+         * Jika user mengisi keyword search
+         */
+        if ($request->search) {
+
+            /**
+             * where(function($q))
+             * digunakan agar query OR tetap dalam 1 grup
+             *
+             * SQL:
+             * WHERE (
+             *   code LIKE '%keyword%'
+             *   OR name LIKE '%keyword%'
+             * )
+             */
+            $query->where(function ($q) use ($request) {
+
+                $q->where(
+                    'code',
+                    'like',
+                    '%' . $request->search . '%'
+                )
+
+                // ATAU cari berdasarkan nama
+                ->orWhere(
+                    'name',
+                    'like',
+                    '%' . $request->search . '%'
+                );
+            });
+        }
+
+        /**
+         * FILTER CATEGORY
+         * Jika category dipilih
+         */
+        if ($request->category_id) {
+
+            // Ambil data sesuai category_id
+            $query->where(
+                'category_id',
+                $request->category_id
+            );
+        }
+
+        /**
+         * Eksekusi query
+         * latest() = urut terbaru
+         */
+        $coas = $query->latest()->get();
 
         /**
          * Ambil semua category
-         * untuk dropdown/select form
+         * biasanya untuk dropdown filter/form
          */
         $categories = Category::latest()->get();
 
         /**
-         * Tampilkan halaman:
-         * dashboard.sections.coas
-         * 
-         * compact():
-         * mengirim variabel ke view
+         * Tampilkan halaman blade
+         * sambil kirim data coas & categories
          */
         return view(
             'dashboard.sections.coas',

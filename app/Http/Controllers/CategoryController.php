@@ -2,30 +2,21 @@
 
 namespace App\Http\Controllers;
 
-// Import model Category
 use App\Models\Category;
-
-// Import Request untuk mengambil data dari form/input user
 use Illuminate\Http\Request;
 
 class CategoryController extends Controller
 {
     /**
-     * Menampilkan semua data category
+     * Menampilkan semua data category dalam bentuk JSON
      */
     public function index()
     {
-        /**
-         * Ambil semua category
-         * latest() = urut berdasarkan created_at terbaru
-         * get()    = eksekusi query dan ambil semua data
-         */
+        // Ambil semua category dari database
+        // latest() = urut berdasarkan data terbaru
         $categories = Category::latest()->get();
 
-        /**
-         * Return data dalam bentuk JSON
-         * Biasanya dipakai untuk API / AJAX
-         */
+        // Kembalikan data dalam format JSON
         return response()->json($categories);
     }
 
@@ -34,110 +25,116 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        /**
-         * Insert data baru ke database
-         * 
-         * $request->name
-         * mengambil input bernama "name"
-         */
+        // Membuat data category baru
+        // value name diambil dari input form/request
         Category::create([
             'name' => $request->name
         ]);
 
-        /**
-         * Setelah berhasil:
-         * - redirect ke halaman /categories
-         * - kirim flash message success
-         */
+        // Setelah berhasil simpan,
+        // redirect kembali ke halaman categories
+        // sambil membawa pesan success
         return redirect('/categories')
             ->with('success', 'Category created');
     }
 
     /**
-     * Menampilkan detail category berdasarkan ID
+     * Menampilkan 1 data category berdasarkan id
      */
     public function show($id)
     {
-        /**
-         * Cari category berdasarkan id
-         * 
-         * findOrFail():
-         * - kalau data ada => dikembalikan
-         * - kalau tidak ada => otomatis 404
-         */
+        // Cari category berdasarkan id
+        // jika tidak ditemukan -> otomatis error 404
         $category = Category::findOrFail($id);
 
-        /**
-         * Return data category dalam bentuk JSON
-         */
+        // Kembalikan data dalam format JSON
         return response()->json($category);
     }
 
     /**
-     * Update data category
+     * Mengupdate data category
      */
     public function update(Request $request, $id)
     {
-        /**
-         * Cari category berdasarkan id
-         */
+        // Cari category berdasarkan id
         $category = Category::findOrFail($id);
 
-        /**
-         * Update field name
-         * dengan input dari request
-         */
+        // Update data name
         $category->update([
             'name' => $request->name
         ]);
 
-        /**
-         * Redirect kembali ke halaman categories
-         * sambil membawa pesan sukses
-         */
+        // Redirect kembali ke halaman categories
+        // dengan pesan success
         return redirect('/categories')
             ->with('success', 'Category updated');
     }
 
     /**
-     * Hapus data category
+     * Menghapus data category
      */
     public function destroy($id)
     {
-        /**
-         * Cari category berdasarkan id
-         */
+        // Cari category berdasarkan id
         $category = Category::findOrFail($id);
 
-        /**
-         * Hapus data dari database
-         */
+        // Hapus data
         $category->delete();
 
-        /**
-         * Redirect kembali dengan flash message
-         */
+        // Redirect kembali ke halaman categories
+        // dengan pesan success
         return redirect('/categories')
             ->with('success', 'Category deleted');
     }
-    
+
     /**
-     * Menampilkan halaman view categories
+     * Menampilkan halaman categories
+     * beserta fitur search & filter tanggal
      */
-    public function view()
+    public function view(Request $request)
     {
-        /**
-         * Ambil semua category terbaru
-         */
-        $categories = Category::latest()->get();
+        // Membuat query awal dari model Category
+        $query = Category::query();
 
         /**
-         * Tampilkan file view:
-         * dashboard.sections.categories
-         * 
-         * compact('categories')
-         * mengirim variabel $categories ke view
+         * FILTER SEARCH
+         * Jika ada input search,
+         * cari category berdasarkan nama
          */
+        if ($request->search) {
+
+            // SQL:
+            // WHERE name LIKE '%keyword%'
+            $query->where('name', 'like', '%' . $request->search . '%');
+        }
+
+        /**
+         * FILTER START DATE
+         * Jika start_date diisi,
+         * ambil data dari tanggal tersebut ke atas
+         */
+        if ($request->start_date) {
+
+            // WHERE created_at >= start_date
+            $query->whereDate('created_at', '>=', $request->start_date);
+        }
+
+        /**
+         * FILTER END DATE
+         * Jika end_date diisi,
+         * ambil data sampai tanggal tersebut
+         */
+        if ($request->end_date) {
+
+            // WHERE created_at <= end_date
+            $query->whereDate('created_at', '<=', $request->end_date);
+        }
+
+        // Ambil hasil query
+        // latest() = urut dari terbaru
+        $categories = $query->latest()->get();
+
+        // Kirim data categories ke blade view
         return view('dashboard.sections.categories', compact('categories'));
     }
 }

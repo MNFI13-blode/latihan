@@ -2,29 +2,25 @@
 
 namespace App\Http\Controllers;
 
-// Import model Transaction
 use App\Models\Transaction;
-
-// Import class export Excel
 use App\Exports\ProfitLossExport;
-
-// Facade Excel dari Laravel Excel
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
 {
     /**
-     * Menampilkan halaman laporan laba rugi
+     * Menampilkan laporan laba rugi
      */
     public function profitLoss()
     {
         /**
-         * Ambil semua transaksi beserta relasinya:
+         * Ambil semua transaksi
+         * beserta relasi:
          * - coa
          * - category dari coa
-         * 
-         * with() digunakan untuk eager loading
-         * agar query lebih efisien
+         *
+         * with() digunakan agar query lebih efisien
+         * (eager loading)
          */
         $transactions = Transaction::with([
             'coa',
@@ -32,81 +28,90 @@ class ReportController extends Controller
         ])->get();
 
         /**
-         * Ambil semua transaksi income
-         * 
-         * credit > 0 dianggap pemasukan
+         * DATA INCOME
+         * Ambil transaksi yang memiliki credit > 0
+         *
+         * credit = pemasukan
          */
-        $income = $transactions->where('credit', '>', 0);
+        $income = $transactions->where(
+            'credit',
+            '>',
+            0
+        );
 
         /**
-         * Ambil semua transaksi expense
-         * 
-         * debit > 0 dianggap pengeluaran
+         * DATA EXPENSE
+         * Ambil transaksi yang memiliki debit > 0
+         *
+         * debit = pengeluaran
          */
-        $expense = $transactions->where('debit', '>', 0);
+        $expense = $transactions->where(
+            'debit',
+            '>',
+            0
+        );
 
         /**
-         * Hitung total seluruh income
-         * 
-         * Menjumlahkan field credit
+         * TOTAL INCOME
+         * Menjumlahkan semua nilai credit
          */
         $totalIncome = $income->sum('credit');
 
         /**
-         * Hitung total seluruh expense
-         * 
-         * Menjumlahkan field debit
+         * TOTAL EXPENSE
+         * Menjumlahkan semua nilai debit
          */
         $totalExpense = $expense->sum('debit');
 
         /**
-         * Hitung laba bersih
-         * 
-         * laba = income - expense
+         * NET INCOME
+         * laba bersih = income - expense
          */
         $netIncome = $totalIncome - $totalExpense;
 
         /**
          * Tampilkan halaman report
-         * sambil mengirim data:
-         * 
-         * - income
-         * - expense
-         * - total income
-         * - total expense
-         * - net income
+         * dan kirim semua data ke blade
          */
         return view(
             'dashboard.sections.report',
             compact(
+
+                // daftar income
                 'income',
+
+                // daftar expense
                 'expense',
+
+                // total pemasukan
                 'totalIncome',
+
+                // total pengeluaran
                 'totalExpense',
+
+                // laba bersih
                 'netIncome'
             )
         );
     }
 
     /**
-     * Export laporan laba rugi ke file Excel
+     * Export laporan laba rugi ke Excel
      */
     public function exportExcel()
     {
         /**
          * Excel::download()
-         * digunakan untuk download file excel
-         * 
-         * Parameter:
-         * 1. class export
-         * 2. nama file hasil download
+         * digunakan untuk generate & download file excel
+         *
+         * ProfitLossExport
+         * = class export yang mengatur isi excel
+         *
+         * 'profit-loss-report.xlsx'
+         * = nama file download
          */
         return Excel::download(
-
-            // Class export yang berisi data laporan
             new ProfitLossExport,
-
-            // Nama file excel
             'profit-loss-report.xlsx'
         );
     }

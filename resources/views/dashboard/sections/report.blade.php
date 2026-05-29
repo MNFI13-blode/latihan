@@ -2,30 +2,32 @@
 
 @section('content')
 
-<!-- {{-- ===================================================== --}}
-{{-- HEADER HALAMAN REPORT --}}
-{{-- ===================================================== --}} -->
-
+{{-- ===================================================== --}}
+{{-- HEADER HALAMAN --}}
+{{-- ===================================================== --}}
 <div class="d-flex justify-content-between align-items-center mb-4">
 
-    <!-- {{-- Bagian judul --}} -->
+    {{-- Judul & deskripsi --}}
     <div>
 
-        <!-- Judul halaman -->
-        <h2>Profit / Loss Report</h2>
+        {{-- Judul halaman --}}
+        <h2>
+            Profit / Loss Report
+        </h2>
 
-        <!-- Subjudul -->
+        {{-- Deskripsi halaman --}}
         <p class="text-muted mb-0">
+
             Monthly financial summary
         </p>
     </div>
 
-    <!-- {{-- Tombol action --}} -->
+    {{-- =============================================== --}}
+    {{-- BUTTON ACTION --}}
+    {{-- =============================================== --}}
     <div class="d-flex gap-2">
 
-        <!-- {{-- 
-            Tombol membuka modal filter
-        --}} -->
+        {{-- Button buka modal filter --}}
         <button
             class="btn btn-outline-primary"
             data-bs-toggle="modal"
@@ -34,12 +36,7 @@
             Filter Report
         </button>
 
-        <!-- {{-- 
-            Tombol export excel
-            
-            route('profit-loss.export')
-            menuju route export excel
-        --}} -->
+        {{-- Button export excel --}}
         <a
             href="{{ route('profit-loss.export') }}"
             class="btn btn-success">
@@ -49,122 +46,170 @@
     </div>
 </div>
 
-<!-- {{-- ===================================================== --}}
-<!-- CARD LAPORAN -->
-<!-- ===================================================== --> -->
-
+{{-- ===================================================== --}}
+{{-- CARD LAPORAN --}}
+{{-- ===================================================== --}}
 <div class="card card-custom p-4">
 
-    <!-- Responsive table -->
+    {{-- Responsive table --}}
     <div class="table-responsive">
 
-        <!-- Tabel laporan -->
-        <table class="table table-bordered text-center align-middle">
+        {{-- Table laporan --}}
+        <table
+            class="table table-bordered text-center align-middle">
 
-            <!-- Header tabel -->
+            {{-- ========================================= --}}
+            {{-- TABLE HEADER --}}
+            {{-- ========================================= --}}
             <thead class="table-warning">
+
                 <tr>
-                    <th>Category</th>
-                    <th>Total</th>
+
+                    {{-- Nama category / akun --}}
+                    <th>
+                        Category
+                    </th>
+
+                    {{-- Total nominal --}}
+                    <th>
+                        Total
+                    </th>
                 </tr>
             </thead>
 
+            {{-- ========================================= --}}
+            {{-- TABLE BODY --}}
+            {{-- ========================================= --}}
             <tbody>
 
-                <!-- ===================================================== -->
-                <!-- DATA INCOME -->
-                <!-- ===================================================== -->
-
-                <!-- {{-- 
-                    Loop semua income
-                    
-                    $income berasal dari controller:
-                    transaksi credit > 0
-                --}} -->
+                {{-- ===================================== --}}
+                {{-- DATA INCOME --}}
+                {{-- ===================================== --}}
                 @foreach($income as $item)
 
+                {{-- Row income --}}
                 <tr class="table-success">
 
-                    <!-- Nama COA -->
+                    {{-- Nama COA --}}
                     <td>
+
                         {{ $item->coa->name ?? '-' }}
                     </td>
 
-                    <!-- Nilai income -->
+                    {{-- Nominal credit --}}
                     <td>
 
-                        <!-- {{-- 
-                            number_format():
-                            format rupiah
-                            
-                            contoh:
-                            1000000 => 1.000.000
-                        --}} -->
-                        Rp {{ number_format($item->credit, 0, ',', '.') }}
+                        Rp
+                        {{
+                            number_format(
+                                $item->credit,
+                                0,
+                                ',',
+                                '.'
+                            )
+                        }}
                     </td>
                 </tr>
 
                 @endforeach
 
-                <!-- Total income -->
+                {{-- ===================================== --}}
+                {{-- TOTAL INCOME --}}
+                {{-- ===================================== --}}
                 <tr class="table-success fw-bold">
 
-                    <td>Total Income</td>
+                    <td>
+                        Total Income
+                    </td>
 
                     <td>
-                        Rp {{ number_format($totalIncome, 0, ',', '.') }}
+
+                        Rp
+                        {{
+                            number_format(
+                                $totalIncome,
+                                0,
+                                ',',
+                                '.'
+                            )
+                        }}
                     </td>
                 </tr>
 
-                <!-- {{-- ===================================================== --}}
+                {{-- ===================================== --}}
                 {{-- DATA EXPENSE --}}
-                {{-- ===================================================== --}} -->
-
-                <!-- {{-- 
-                    Loop semua expense
-                    
-                    $expense berasal dari controller:
-                    transaksi debit > 0
-                --}} -->
+                {{-- ===================================== --}}
                 @foreach($expense as $item)
 
+                {{-- Row expense --}}
                 <tr class="table-danger">
 
-                    <!-- Nama COA -->
+                    {{-- Nama COA --}}
                     <td>
+
                         {{ $item->coa->name ?? '-' }}
                     </td>
 
-                    <!-- Nilai expense -->
+                    {{-- Nominal debit --}}
                     <td>
-                        Rp {{ number_format($item->debit, 0, ',', '.') }}
+
+                        Rp
+                        {{
+                            number_format(
+                                $item->debit,
+                                0,
+                                ',',
+                                '.'
+                            )
+                        }}
                     </td>
                 </tr>
 
                 @endforeach
 
-                <!-- Total expense -->
+                {{-- ===================================== --}}
+                {{-- TOTAL EXPENSE --}}
+                {{-- ===================================== --}}
                 <tr class="table-danger fw-bold">
 
-                    <td>Total Expense</td>
+                    <td>
+                        Total Expense
+                    </td>
 
                     <td>
-                        Rp {{ number_format($totalExpense, 0, ',', '.') }}
+
+                        Rp
+                        {{
+                            number_format(
+                                $totalExpense,
+                                0,
+                                ',',
+                                '.'
+                            )
+                        }}
                     </td>
                 </tr>
 
-                <!-- ===================================================== -->
-                <!-- NET INCOME -->
-                <!-- ===================================================== -->
-
+                {{-- ===================================== --}}
+                {{-- NET INCOME --}}
+                {{-- ===================================== --}}
                 <tr class="table-primary fw-bold">
 
-                    <!-- Label laba bersih -->
-                    <td>Net Income</td>
-
-                    <!-- Nilai laba bersih -->
                     <td>
-                        Rp {{ number_format($netIncome, 0, ',', '.') }}
+                        Net Income
+                    </td>
+
+                    <td>
+
+                        Rp
+                        {{
+                            number_format(
+                                $netIncome,
+                                0,
+                                ',',
+                                '.'
+                            )
+                        }}
                     </td>
                 </tr>
             </tbody>
@@ -172,86 +217,112 @@
     </div>
 </div>
 
-<!-- {{-- ===================================================== --}}
+{{-- ===================================================== --}}
 {{-- MODAL FILTER REPORT --}}
-{{-- ===================================================== --}} -->
-
-<div class="modal fade" id="filterReportModal" tabindex="-1">
+{{-- ===================================================== --}}
+<div
+    class="modal fade"
+    id="filterReportModal"
+    tabindex="-1">
 
     <div class="modal-dialog">
 
         <div class="modal-content">
 
-            <!-- Header modal -->
+            {{-- ========================================= --}}
+            {{-- MODAL HEADER --}}
+            {{-- ========================================= --}}
             <div class="modal-header">
 
                 <h5 class="modal-title">
+
                     Filter Report
                 </h5>
 
-                <!-- Tombol close -->
+                {{-- Button close --}}
                 <button
                     class="btn-close"
-                    data-bs-dismiss="modal"></button>
+                    data-bs-dismiss="modal">
+                </button>
             </div>
 
-            <!-- Body modal -->
+            {{-- ========================================= --}}
+            {{-- MODAL BODY --}}
+            {{-- ========================================= --}}
             <div class="modal-body">
 
-                <!-- Input start month -->
+                {{-- ===================================== --}}
+                {{-- FILTER START MONTH --}}
+                {{-- ===================================== --}}
                 <div class="mb-3">
 
                     <label class="form-label">
+
                         Start Month
                     </label>
 
-                    <!-- Input bulan awal -->
+                    {{-- Input bulan awal --}}
                     <input
                         type="month"
                         class="form-control">
                 </div>
 
-                <!-- Input end month -->
+                {{-- ===================================== --}}
+                {{-- FILTER END MONTH --}}
+                {{-- ===================================== --}}
                 <div class="mb-3">
 
                     <label class="form-label">
+
                         End Month
                     </label>
 
-                    <!-- Input bulan akhir -->
+                    {{-- Input bulan akhir --}}
                     <input
                         type="month"
                         class="form-control">
                 </div>
 
-                <!-- Filter category -->
+                {{-- ===================================== --}}
+                {{-- FILTER CATEGORY --}}
+                {{-- ===================================== --}}
                 <div class="mb-3">
 
                     <label class="form-label">
+
                         Category
                     </label>
 
-                    <!-- Dropdown category -->
+                    {{-- Dropdown category --}}
                     <select class="form-select">
 
-                        <!-- Default -->
+                        {{-- Default --}}
                         <option selected>
+
                             All Categories
                         </option>
 
-                        <!-- Option income -->
-                        <option>Income</option>
+                        {{-- Income --}}
+                        <option>
 
-                        <!-- Option expense -->
-                        <option>Expense</option>
+                            Income
+                        </option>
+
+                        {{-- Expense --}}
+                        <option>
+
+                            Expense
+                        </option>
                     </select>
                 </div>
             </div>
 
-            <!-- Footer modal -->
+            {{-- ========================================= --}}
+            {{-- MODAL FOOTER --}}
+            {{-- ========================================= --}}
             <div class="modal-footer">
 
-                <!-- Tombol close -->
+                {{-- Button close --}}
                 <button
                     class="btn btn-secondary"
                     data-bs-dismiss="modal">
@@ -259,7 +330,7 @@
                     Close
                 </button>
 
-                <!-- Tombol apply filter -->
+                {{-- Button apply filter --}}
                 <button class="btn btn-primary">
 
                     Apply Filter
