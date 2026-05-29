@@ -6,128 +6,232 @@ use App\Models\Coa;
 use App\Models\Category;
 use Illuminate\Http\Request;
 
+// {{-- 
+//     Digunakan untuk validasi unique
+//     saat update data
+// --}}
+use Illuminate\Validation\Rule;
+
 class CoaController extends Controller
 {
-    /**
-     * Menampilkan semua data COA beserta category
-     * dalam format JSON
-     */
+    // =====================================================
+    // MENAMPILKAN SEMUA DATA COA DALAM FORMAT JSON
+    // =====================================================
     public function index()
     {
-        /**
-         * with('category')
-         * digunakan untuk mengambil relasi category
-         * agar tidak query berulang (eager loading)
-         */
-        $coas = Coa::with('category')->latest()->get();
+        /*
+            Mengambil semua data COA
+            beserta relasi category
+            lalu diurutkan terbaru
+        */
+        $coas = Coa::with('category')
+            ->latest()
+            ->get();
 
-        // Return data JSON
+        /*
+            Mengembalikan data
+            dalam format JSON
+        */
         return response()->json($coas);
     }
 
-    /**
-     * Menyimpan data COA baru
-     */
+    // =====================================================
+    // MENYIMPAN DATA COA BARU
+    // =====================================================
     public function store(Request $request)
     {
-        // Membuat data COA baru
+        /*
+            Validasi input user
+        */
+        $request->validate([
+
+            /*
+                Code wajib diisi
+                dan harus unique
+                di tabel coas
+            */
+            'code' => 'required|unique:coas,code',
+
+            /*
+                Nama wajib diisi
+            */
+            'name' => 'required',
+
+            /*
+                Category wajib dipilih
+            */
+            'category_id' => 'required'
+
+        ], [
+
+            /*
+                Custom pesan error
+            */
+            'code.unique' => 'Code COA sudah ada',
+
+            'code.required' => 'Code wajib diisi'
+        ]);
+
+        /*
+            Menyimpan data COA baru
+        */
         Coa::create([
 
-            // kode akun
             'code' => $request->code,
 
-            // nama akun
             'name' => $request->name,
 
-            // foreign key category
             'category_id' => $request->category_id
         ]);
 
-        // Redirect ke halaman COA
-        // dengan pesan berhasil
+        /*
+            Redirect kembali
+            ke halaman COA
+        */
         return redirect('/coas')
+
+            /*
+                Membawa session success
+            */
             ->with('success', 'COA created');
     }
 
-    /**
-     * Menampilkan detail 1 COA berdasarkan id
-     */
+    // =====================================================
+    // MENAMPILKAN DETAIL COA BERDASARKAN ID
+    // =====================================================
     public function show($id)
     {
-        /**
-         * Ambil data COA + relasi category
-         * findOrFail() -> jika tidak ada, error 404
-         */
-        $coa = Coa::with('category')->findOrFail($id);
+        /*
+            Cari COA berdasarkan ID
+            beserta relasi category
 
-        // Return data JSON
+            Jika tidak ditemukan,
+            otomatis 404
+        */
+        $coa = Coa::with('category')
+            ->findOrFail($id);
+
+        /*
+            Return data JSON
+        */
         return response()->json($coa);
     }
 
-    /**
-     * Mengupdate data COA
-     */
+    // =====================================================
+    // UPDATE DATA COA
+    // =====================================================
     public function update(Request $request, $id)
     {
-        // Cari data COA berdasarkan id
+        /*
+            Cari data COA berdasarkan ID
+        */
         $coa = Coa::findOrFail($id);
 
-        // Update data
+        /*
+            Validasi input update
+        */
+        $request->validate([
+
+            /*
+                Code:
+                - wajib diisi
+                - unique
+                - kecuali data dirinya sendiri
+            */
+            'code' => [
+
+                'required',
+
+                Rule::unique('coas', 'code')
+                    ->ignore($coa->id)
+            ],
+
+            /*
+                Nama wajib diisi
+            */
+            'name' => 'required',
+
+            /*
+                Category wajib dipilih
+            */
+            'category_id' => 'required'
+
+        ], [
+
+            /*
+                Custom error
+            */
+            'code.unique' => 'Code COA sudah ada',
+        ]);
+
+        /*
+            Update data COA
+        */
         $coa->update([
+
             'code' => $request->code,
+
             'name' => $request->name,
+
             'category_id' => $request->category_id
         ]);
 
-        // Redirect kembali ke halaman COA
+        /*
+            Redirect kembali
+            ke halaman COA
+        */
         return redirect('/coas')
+
             ->with('success', 'COA updated');
     }
 
-    /**
-     * Menghapus data COA
-     */
+    // =====================================================
+    // HAPUS DATA COA
+    // =====================================================
     public function destroy($id)
     {
-        // Cari data COA
+        /*
+            Cari data COA
+            berdasarkan ID
+        */
         $coa = Coa::findOrFail($id);
 
-        // Hapus data
+        /*
+            Hapus data
+        */
         $coa->delete();
 
-        // Redirect kembali dengan pesan sukses
+        /*
+            Redirect kembali
+            ke halaman COA
+        */
         return redirect('/coas')
+
             ->with('success', 'COA deleted');
     }
 
-    /**
-     * Menampilkan halaman view COA
-     * beserta fitur search & filter category
-     */
+    // =====================================================
+    // MENAMPILKAN HALAMAN VIEW COA
+    // =====================================================
     public function view(Request $request)
     {
-        /**
-         * Query awal
-         * with('category') agar relasi category ikut diambil
-         */
+        /*
+            Query awal
+            beserta relasi category
+        */
         $query = Coa::with('category');
 
-        /**
-         * SEARCH
-         * Jika user mengisi keyword search
-         */
+        // =================================================
+        // FILTER SEARCH
+        // =================================================
+        
         if ($request->search) {
 
-            /**
-             * where(function($q))
-             * digunakan agar query OR tetap dalam 1 grup
-             *
-             * SQL:
-             * WHERE (
-             *   code LIKE '%keyword%'
-             *   OR name LIKE '%keyword%'
-             * )
-             */
+            /*
+                Cari berdasarkan:
+                - code
+                - name
+            */
             $query->where(function ($q) use ($request) {
 
                 $q->where(
@@ -136,7 +240,6 @@ class CoaController extends Controller
                     '%' . $request->search . '%'
                 )
 
-                // ATAU cari berdasarkan nama
                 ->orWhere(
                     'name',
                     'like',
@@ -145,38 +248,42 @@ class CoaController extends Controller
             });
         }
 
-        /**
-         * FILTER CATEGORY
-         * Jika category dipilih
-         */
+        // =================================================
+        // FILTER CATEGORY
+        // =================================================
+        
         if ($request->category_id) {
 
-            // Ambil data sesuai category_id
+            /*
+                Filter berdasarkan category
+            */
             $query->where(
                 'category_id',
                 $request->category_id
             );
         }
 
-        /**
-         * Eksekusi query
-         * latest() = urut terbaru
-         */
+        /*
+            Ambil data terbaru
+        */
         $coas = $query->latest()->get();
 
-        /**
-         * Ambil semua category
-         * biasanya untuk dropdown filter/form
-         */
+        /*
+            Ambil semua category
+            untuk dropdown filter
+        */
         $categories = Category::latest()->get();
 
-        /**
-         * Tampilkan halaman blade
-         * sambil kirim data coas & categories
-         */
+        /*
+            Kirim data ke view blade
+        */
         return view(
             'dashboard.sections.coas',
-            compact('coas', 'categories')
+
+            compact(
+                'coas',
+                'categories'
+            )
         );
     }
 }

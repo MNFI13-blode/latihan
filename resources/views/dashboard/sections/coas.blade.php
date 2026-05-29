@@ -17,6 +17,73 @@
         Manage Chart of Accounts data.
     </p>
 </div>
+{{-- ===================================================== --}}
+{{-- VALIDATION ERROR ALERT --}}
+{{-- ===================================================== --}}
+
+{{-- 
+    Mengecek apakah ada error validasi.
+    
+    Contoh:
+    - input kosong
+    - format salah
+    - data tidak valid
+--}}
+@if ($errors->any())
+
+{{-- ===================================================== --}}
+{{-- ALERT BOX --}}
+{{-- ===================================================== --}}
+<div
+    class="
+        alert
+        alert-danger
+        alert-dismissible
+        fade
+        show
+    "
+    role="alert"
+>
+
+    {{-- Judul alert --}}
+    <strong>
+
+        Terjadi kesalahan!
+    </strong>
+
+    {{-- ================================================= --}}
+    {{-- LIST ERROR --}}
+    {{-- ================================================= --}}
+    
+    <ul class="mb-0 mt-2">
+
+        {{-- 
+            Loop semua pesan error
+            dari validation Laravel
+        --}}
+        @foreach ($errors->all() as $error)
+
+        <li>
+
+            {{-- Tampilkan pesan error --}}
+            {{ $error }}
+        </li>
+
+        @endforeach
+    </ul>
+
+    {{-- ================================================= --}}
+    {{-- BUTTON CLOSE ALERT --}}
+    {{-- ================================================= --}}
+    
+    <button
+        type="button"
+        class="btn-close"
+        data-bs-dismiss="alert"
+    ></button>
+
+</div>
+@endif
 
 {{-- ===================================================== --}}
 {{-- CARD FILTER & SEARCH --}}
